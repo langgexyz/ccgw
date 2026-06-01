@@ -1,6 +1,6 @@
 //go:build unit
 
-package edgetls
+package mtls
 
 import (
 	"crypto/ecdsa"
@@ -42,7 +42,7 @@ func newTestCA(t *testing.T, dir string) *testCA {
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: "edgetls-test-ca"},
+		Subject:               pkix.Name{CommonName: "mtls-test-ca"},
 		NotBefore:             time.Now().Add(-time.Hour),
 		NotAfter:              time.Now().Add(time.Hour),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,

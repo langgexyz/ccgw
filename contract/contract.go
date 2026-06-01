@@ -26,8 +26,8 @@ type LeaseRequest struct {
 // Zero value means "Authorization: Bearer <token>". Gemini-style key-in-query
 // and Anthropic-style x-api-key + version headers are expressible here.
 //
-// This is data only; the HTTP-applying behavior lives next to the edge relay
-// (edgegw.applyAuthScheme) since contract must stay free of net/http.
+// This is data only; the HTTP-applying behavior lives next to the ccdirect relay
+// (applyAuthScheme) since contract must stay free of net/http.
 type AuthScheme struct {
 	Header     string            `json:"header,omitempty"`      // e.g. "Authorization", "x-api-key"
 	Prefix     string            `json:"prefix,omitempty"`      // e.g. "Bearer "
@@ -41,10 +41,10 @@ type AuthScheme struct {
 type Candidate struct {
 	AccountID       string            `json:"account_id"`
 	HomeCCDirectID  string            `json:"home_ccdirect_id"`
-	Platform        string            `json:"platform"` // selects the edge-side Provider (anthropic/openai/gemini/antigravity)
+	Platform        string            `json:"platform"` // selects the ccdirect-side Provider (anthropic/openai/gemini/antigravity)
 	UpstreamBaseURL string            `json:"upstream_base_url"`
-	LeaseToken      string            `json:"lease_token"` // short-lived; edge uses then discards
-	AuthScheme      AuthScheme        `json:"auth_scheme"` // how the edge presents the token upstream
+	LeaseToken      string            `json:"lease_token"` // short-lived; ccdirect uses then discards
+	AuthScheme      AuthScheme        `json:"auth_scheme"` // how the ccdirect presents the token upstream
 	ModelMapping    map[string]string `json:"model_mapping"`
 }
 
@@ -88,7 +88,7 @@ type SettleRequest struct {
 	CacheCreationTokens int    `json:"cache_creation_tokens"`
 	StatusCode          int    `json:"status_code"`
 	LatencyMS           int64  `json:"latency_ms"`
-	Partial             bool   `json:"partial"` // edge crashed / client disconnected mid-stream
+	Partial             bool   `json:"partial"` // ccdirect crashed / client disconnected mid-stream
 }
 
 // SettleResult acknowledges a Settle.

@@ -1,6 +1,6 @@
 //go:build unit
 
-package edgereg
+package registry
 
 import (
 	"sync"
@@ -36,14 +36,14 @@ func TestRegisterAndGet(t *testing.T) {
 	clk := newFakeClock(time.Unix(1000, 0))
 	r := New(time.Minute, clk.now)
 
-	r.Register("edge-a", "10.0.0.1", []string{"openai", "anthropic"})
+	r.Register("ccdirect-a", "10.0.0.1", []string{"openai", "anthropic"})
 
-	got, ok := r.Get("edge-a")
+	got, ok := r.Get("ccdirect-a")
 	if !ok {
-		t.Fatalf("Get(edge-a): want ok, got missing")
+		t.Fatalf("Get(ccdirect-a): want ok, got missing")
 	}
-	if got.ID != "edge-a" {
-		t.Errorf("ID: want edge-a, got %q", got.ID)
+	if got.ID != "ccdirect-a" {
+		t.Errorf("ID: want ccdirect-a, got %q", got.ID)
 	}
 	if got.EgressIP != "10.0.0.1" {
 		t.Errorf("EgressIP: want 10.0.0.1, got %q", got.EgressIP)
@@ -59,8 +59,8 @@ func TestRegisterAndGet(t *testing.T) {
 	}
 
 	live := r.Live()
-	if len(live) != 1 || live[0].ID != "edge-a" {
-		t.Fatalf("Live: want [edge-a], got %v", live)
+	if len(live) != 1 || live[0].ID != "ccdirect-a" {
+		t.Fatalf("Live: want [ccdirect-a], got %v", live)
 	}
 
 	if _, ok := r.Get("missing"); ok {
@@ -73,12 +73,12 @@ func TestRegisterPlatformsCopied(t *testing.T) {
 	r := New(time.Minute, clk.now)
 
 	in := []string{"openai"}
-	r.Register("edge-a", "10.0.0.1", in)
+	r.Register("ccdirect-a", "10.0.0.1", in)
 	in[0] = "mutated"
 
-	got, ok := r.Get("edge-a")
+	got, ok := r.Get("ccdirect-a")
 	if !ok {
-		t.Fatalf("Get(edge-a): want ok, got missing")
+		t.Fatalf("Get(ccdirect-a): want ok, got missing")
 	}
 	if got.Platforms[0] != "openai" {
 		t.Errorf("stored Platforms mutated via caller slice: got %q", got.Platforms[0])
@@ -86,7 +86,7 @@ func TestRegisterPlatformsCopied(t *testing.T) {
 
 	// Mutating a returned copy must not affect stored state either.
 	got.Platforms[0] = "mutated-again"
-	got2, _ := r.Get("edge-a")
+	got2, _ := r.Get("ccdirect-a")
 	if got2.Platforms[0] != "openai" {
 		t.Errorf("stored Platforms mutated via returned copy: got %q", got2.Platforms[0])
 	}
@@ -96,12 +96,12 @@ func TestRegisterPreservesRegisteredAt(t *testing.T) {
 	clk := newFakeClock(time.Unix(1000, 0))
 	r := New(time.Minute, clk.now)
 
-	r.Register("edge-a", "10.0.0.1", nil)
-	first, _ := r.Get("edge-a")
+	r.Register("ccdirect-a", "10.0.0.1", nil)
+	first, _ := r.Get("ccdirect-a")
 
 	clk.advance(10 * time.Second)
-	r.Register("edge-a", "10.0.0.2", nil)
-	second, _ := r.Get("edge-a")
+	r.Register("ccdirect-a", "10.0.0.2", nil)
+	second, _ := r.Get("ccdirect-a")
 
 	if second.RegisteredAt != first.RegisteredAt {
 		t.Errorf("RegisteredAt changed on re-register: was %v, now %v",
@@ -124,15 +124,15 @@ func TestHeartbeat(t *testing.T) {
 		t.Errorf("Heartbeat(unknown): want false, got true")
 	}
 
-	r.Register("edge-a", "10.0.0.1", nil)
-	before, _ := r.Get("edge-a")
+	r.Register("ccdirect-a", "10.0.0.1", nil)
+	before, _ := r.Get("ccdirect-a")
 
 	clk.advance(5 * time.Second)
-	if !r.Heartbeat("edge-a") {
-		t.Fatalf("Heartbeat(edge-a): want true, got false")
+	if !r.Heartbeat("ccdirect-a") {
+		t.Fatalf("Heartbeat(ccdirect-a): want true, got false")
 	}
 
-	after, _ := r.Get("edge-a")
+	after, _ := r.Get("ccdirect-a")
 	if !after.LastSeen.After(before.LastSeen) {
 		t.Errorf("LastSeen not updated by Heartbeat: was %v, now %v",
 			before.LastSeen, after.LastSeen)
@@ -144,27 +144,27 @@ func TestLivenessExpiry(t *testing.T) {
 	ttl := 30 * time.Second
 	r := New(ttl, clk.now)
 
-	r.Register("edge-a", "10.0.0.1", nil)
+	r.Register("ccdirect-a", "10.0.0.1", nil)
 
-	// Exactly at the TTL boundary the edge is still live (<= ttl).
+	// Exactly at the TTL boundary the ccdirect is still live (<= ttl).
 	clk.advance(ttl)
-	if !r.IsLive("edge-a") {
+	if !r.IsLive("ccdirect-a") {
 		t.Errorf("at ttl boundary: want live")
 	}
 	if len(r.Live()) != 1 {
-		t.Errorf("at ttl boundary: want 1 live edge, got %d", len(r.Live()))
+		t.Errorf("at ttl boundary: want 1 live ccdirect, got %d", len(r.Live()))
 	}
 
-	// One tick past the TTL the edge is no longer live.
+	// One tick past the TTL the ccdirect is no longer live.
 	clk.advance(time.Nanosecond)
-	if r.IsLive("edge-a") {
+	if r.IsLive("ccdirect-a") {
 		t.Errorf("past ttl: want not live")
 	}
 	if got := r.Live(); len(got) != 0 {
-		t.Errorf("past ttl: want 0 live edges, got %v", got)
+		t.Errorf("past ttl: want 0 live ccdirects, got %v", got)
 	}
 
-	// IsLive on an unknown edge is always false.
+	// IsLive on an unknown ccdirect is always false.
 	if r.IsLive("unknown") {
 		t.Errorf("IsLive(unknown): want false")
 	}
@@ -180,7 +180,7 @@ func TestPrune(t *testing.T) {
 
 	clk.advance(ttl + time.Second)
 
-	// A fresh edge registered after the others have expired.
+	// A fresh ccdirect registered after the others have expired.
 	r.Register("fresh", "10.0.0.3", nil)
 
 	removed := r.Prune()
@@ -230,9 +230,9 @@ func TestDefaultsApplied(t *testing.T) {
 	if r.ttl != defaultTTL {
 		t.Errorf("ttl default: want %v, got %v", defaultTTL, r.ttl)
 	}
-	r.Register("edge-a", "10.0.0.1", nil)
-	if !r.IsLive("edge-a") {
-		t.Errorf("freshly registered edge should be live with default clock")
+	r.Register("ccdirect-a", "10.0.0.1", nil)
+	if !r.IsLive("ccdirect-a") {
+		t.Errorf("freshly registered ccdirect should be live with default clock")
 	}
 }
 

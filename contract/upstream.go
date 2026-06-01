@@ -3,10 +3,10 @@ package contract
 import "encoding/base64"
 
 // UpstreamBearer extracts the real upstream bearer from a minted lease token. It
-// is what the edge (ccdirect) sends upstream. cchub mints the token; ccdirect
+// is what the ccdirect (ccdirect) sends upstream. cchub mints the token; ccdirect
 // extracts the bearer, so this codec is shared and lives in contract. (In a
-// stricter build the edge would treat the whole envelope as opaque; here the
-// bearer is exposed so the demo edge can set a normal Authorization header.)
+// stricter build the ccdirect would treat the whole envelope as opaque; here the
+// bearer is exposed so the demo ccdirect can set a normal Authorization header.)
 func UpstreamBearer(minted string) string {
 	dot := -1
 	for i := 0; i < len(minted); i++ {

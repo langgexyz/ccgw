@@ -1,6 +1,6 @@
 // Package enroll implements the single-token enrollment flow for sub2api
-// distributed-edge gateways. A user installs an edge and supplies exactly one
-// token that embeds the center base URL and an enroll key. The edge decodes the
+// distributed-ccdirect gateways. A user installs an ccdirect and supplies exactly one
+// token that embeds the center base URL and an enroll key. The ccdirect decodes the
 // token, enrolls with the center, and persists the center-issued configuration
 // locally so subsequent runs require no flags.
 package enroll
@@ -50,8 +50,8 @@ func DecodeToken(s string) (Token, error) {
 	return t, nil
 }
 
-// Enrolled is the persisted edge configuration: the center URL + enroll key
-// the edge keeps, plus the parameters the center issued at enroll time.
+// Enrolled is the persisted ccdirect configuration: the center URL + enroll key
+// the ccdirect keeps, plus the parameters the center issued at enroll time.
 type Enrolled struct {
 	CCHubURL         string   `json:"cchub_url"`
 	CCDirectID       string   `json:"ccdirect_id"`
@@ -62,14 +62,14 @@ type Enrolled struct {
 }
 
 // DefaultStatePath returns the per-user state file path, using
-// os.UserConfigDir() joined with "sub2api-edge/edge.json". Returns an error
+// os.UserConfigDir() joined with "sub2api-ccdirect/ccdirect.json". Returns an error
 // only if os.UserConfigDir fails.
 func DefaultStatePath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("enroll: cannot resolve user config dir: %w", err)
 	}
-	return filepath.Join(dir, "sub2api-edge", "edge.json"), nil
+	return filepath.Join(dir, "sub2api-ccdirect", "ccdirect.json"), nil
 }
 
 // Save writes e as indented JSON to path, creating parent dirs (0700) and
