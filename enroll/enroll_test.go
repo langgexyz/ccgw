@@ -67,10 +67,10 @@ func TestDecodeTokenRejects(t *testing.T) {
 // Load, asserting equality (including the Platforms slice) and that the file is
 // written with mode 0600.
 func TestSaveLoadRoundTrip(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "nested", "edge.json")
+	path := filepath.Join(t.TempDir(), "nested", "ccdirect.json")
 	in := Enrolled{
 		CCHubURL:         "https://center.example.com",
-		CCDirectID:       "edge-42",
+		CCDirectID:       "ccdirect-42",
 		EnrollKey:        "secret-enroll-key",
 		HeartbeatSeconds: 30,
 		MaxFailover:      3,
@@ -107,7 +107,7 @@ func TestLoadMissingFile(t *testing.T) {
 }
 
 // TestDefaultStatePath checks that DefaultStatePath returns a non-empty path
-// ending in "edge.json". It is skipped if os.UserConfigDir fails in the
+// ending in "ccdirect.json". It is skipped if os.UserConfigDir fails in the
 // sandbox.
 func TestDefaultStatePath(t *testing.T) {
 	if _, err := os.UserConfigDir(); err != nil {
@@ -120,7 +120,7 @@ func TestDefaultStatePath(t *testing.T) {
 	if path == "" {
 		t.Fatal("DefaultStatePath returned an empty path")
 	}
-	if base := filepath.Base(path); base != "edge.json" {
-		t.Errorf("path base = %q, want %q", base, "edge.json")
+	if base := filepath.Base(path); base != "ccdirect.json" {
+		t.Errorf("path base = %q, want %q", base, "ccdirect.json")
 	}
 }

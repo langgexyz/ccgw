@@ -1,10 +1,10 @@
-// Package edgetls builds the mutual-TLS (mTLS) configurations used between
-// the edge gateway nodes and the center control plane.
+// Package mtls builds the mutual-TLS (mTLS) configurations used between
+// the ccdirect gateway nodes and the center control plane.
 //
-// The center acts as a TLS server that requires and verifies edge client
-// certificates; each edge acts as a TLS client that verifies the center's
+// The center acts as a TLS server that requires and verifies ccdirect client
+// certificates; each ccdirect acts as a TLS client that verifies the center's
 // server certificate and presents its own client certificate.
-package edgetls
+package mtls
 
 import (
 	"crypto/tls"
@@ -19,11 +19,11 @@ import (
 func loadCAPool(path string) (*x509.CertPool, error) {
 	pem, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("edgetls: read CA file %q: %w", path, err)
+		return nil, fmt.Errorf("mtls: read CA file %q: %w", path, err)
 	}
 	pool := x509.NewCertPool()
 	if !pool.AppendCertsFromPEM(pem) {
-		return nil, fmt.Errorf("edgetls: no valid certificates found in CA file %q", path)
+		return nil, fmt.Errorf("mtls: no valid certificates found in CA file %q", path)
 	}
 	return pool, nil
 }
@@ -35,7 +35,7 @@ func loadCAPool(path string) (*x509.CertPool, error) {
 func ServerTLSConfig(certFile, keyFile, clientCAFile string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("edgetls: load server keypair: %w", err)
+		return nil, fmt.Errorf("mtls: load server keypair: %w", err)
 	}
 	clientCAs, err := loadCAPool(clientCAFile)
 	if err != nil {
@@ -56,7 +56,7 @@ func ServerTLSConfig(certFile, keyFile, clientCAFile string) (*tls.Config, error
 func ClientTLSConfig(certFile, keyFile, serverCAFile string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("edgetls: load client keypair: %w", err)
+		return nil, fmt.Errorf("mtls: load client keypair: %w", err)
 	}
 	rootCAs, err := loadCAPool(serverCAFile)
 	if err != nil {

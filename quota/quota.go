@@ -1,6 +1,6 @@
 // Package quota implements an in-memory, concurrency-safe quota ledger for the
-// distributed edge gateway. The center uses it to prevent quota double-spend
-// across many concurrent edges: at lease time it PRE-DEBITS an estimated cost
+// distributed ccdirect gateway. The center uses it to prevent quota double-spend
+// across many concurrent ccdirects: at lease time it PRE-DEBITS an estimated cost
 // (Reserve), and at settle time it RECONCILES against the actual cost
 // (Reconcile), refunding the overestimate or charging the underestimate. Both
 // operations are idempotent per requestID so a duplicate or retried Lease or

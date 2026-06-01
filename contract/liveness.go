@@ -9,15 +9,15 @@ import (
 )
 
 // Liveness tokens: cchub proves to ccdirect, on every heartbeat, that it is the
-// real cchub AND that this specific edge is still authorized to operate. The
-// token is an Ed25519-signed {edge_id, exp}; ccdirect verifies it with cchub's
+// real cchub AND that this specific ccdirect is still authorized to operate. The
+// token is an Ed25519-signed {ccdirect_id, exp}; ccdirect verifies it with cchub's
 // public key (embedded in the ccdirect binary at build time). If ccdirect stops
 // receiving fresh, valid tokens within a threshold it drains (finishes in-flight
 // requests, refuses new ones) — so a withheld/expired token, an unreachable or
-// impostor cchub, or cchub revoking THIS edge, all converge to "stop serving".
+// impostor cchub, or cchub revoking THIS ccdirect, all converge to "stop serving".
 //
-// "Directed" = the token is bound to one edge_id, so cchub can stop a single
-// edge by simply not signing for it, without affecting the rest of the fleet.
+// "Directed" = the token is bound to one ccdirect_id, so cchub can stop a single
+// ccdirect by simply not signing for it, without affecting the rest of the fleet.
 
 // LivenessToken is the cchub-signed liveness assertion returned on heartbeat.
 type LivenessToken struct {
@@ -26,7 +26,7 @@ type LivenessToken struct {
 	Signature  string `json:"sig"` // base64(ed25519 sig over canonical payload)
 }
 
-// livenessPayload is the exact byte string signed/verified: "edge_id\nexp".
+// livenessPayload is the exact byte string signed/verified: "ccdirect_id\nexp".
 func livenessPayload(ccdirectID string, exp int64) []byte {
 	return []byte(ccdirectID + "\n" + strconv.FormatInt(exp, 10))
 }
@@ -47,8 +47,8 @@ func SignLiveness(priv ed25519.PrivateKey, ccdirectID string, ttl time.Duration,
 }
 
 var (
-	// ErrLivenessWrongEdge means the token is for a different edge id.
-	ErrLivenessWrongEdge = errors.New("contract: liveness token edge id mismatch")
+	// ErrLivenessWrongEdge means the token is for a different ccdirect id.
+	ErrLivenessWrongEdge = errors.New("contract: liveness token ccdirect id mismatch")
 	// ErrLivenessExpired means the token's exp is in the past.
 	ErrLivenessExpired = errors.New("contract: liveness token expired")
 	// ErrLivenessBadSig means the signature did not verify against the pubkey.
@@ -57,7 +57,7 @@ var (
 	ErrLivenessMalformed = errors.New("contract: liveness token malformed")
 )
 
-// VerifyLiveness checks a token against pub: the signature must verify, edge_id
+// VerifyLiveness checks a token against pub: the signature must verify, ccdirect_id
 // must match, and it must not be expired (relative to now, default time.Now).
 func VerifyLiveness(pub ed25519.PublicKey, tok LivenessToken, ccdirectID string, now func() time.Time) error {
 	if now == nil {
@@ -80,7 +80,7 @@ func VerifyLiveness(pub ed25519.PublicKey, tok LivenessToken, ccdirectID string,
 }
 
 // HeartbeatResponse is the cchub reply to a heartbeat. Liveness is nil only when
-// cchub declines to vouch for the edge (e.g. it is revoked) — ccdirect treats a
+// cchub declines to vouch for the ccdirect (e.g. it is revoked) — ccdirect treats a
 // missing/invalid token as "no fresh liveness" and drains after the threshold.
 type HeartbeatResponse struct {
 	OK       bool           `json:"ok"`

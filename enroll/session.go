@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 )
 
-// Session is the edge's minimal persisted login state: just the owner's sub2api
+// Session is the ccdirect's minimal persisted login state: just the owner's sub2api
 // token pair. Everything else is derived — email/uid by parsing the JWT, and
-// the seal secret + platforms + edge id fetched from the center at runtime via
-// GET /edge/v1/config. Storing only these two means a rotated token (auto- or
+// the seal secret + platforms + ccdirect id fetched from the center at runtime via
+// GET /ccdirect/v1/config. Storing only these two means a rotated token (auto- or
 // re-login) is the only thing that needs writing back.
 type Session struct {
 	OwnerAccess  string `json:"owner_access"`
@@ -17,25 +17,25 @@ type Session struct {
 }
 
 // DefaultSessionPath returns the per-user session file path:
-// os.UserConfigDir()/sub2api-edge/session.json.
+// os.UserConfigDir()/sub2api-ccdirect/session.json.
 func DefaultSessionPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "sub2api-edge", "session.json"), nil
+	return filepath.Join(dir, "sub2api-ccdirect", "session.json"), nil
 }
 
 // DefaultDeviceKeyPath returns the per-user device key file path, a sibling of
-// the default session file: os.UserConfigDir()/sub2api-edge/device_key. The
-// device key is the raw Ed25519 private key (0600) the edge signs bound refresh
+// the default session file: os.UserConfigDir()/sub2api-ccdirect/device_key. The
+// device key is the raw Ed25519 private key (0600) the ccdirect signs bound refresh
 // requests with.
 func DefaultDeviceKeyPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "sub2api-edge", "device_key"), nil
+	return filepath.Join(dir, "sub2api-ccdirect", "device_key"), nil
 }
 
 // LoadSession reads a Session previously written by SaveSession. A missing file

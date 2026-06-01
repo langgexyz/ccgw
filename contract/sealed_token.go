@@ -1,5 +1,5 @@
 // Package contract holds the wire types and crypto shared between the two halves
-// of the distributed gateway: ccdirect (data plane / edge) and cchub (control
+// of the distributed gateway: ccdirect (data plane / ccdirect) and cchub (control
 // plane / center). Both import this package; neither depends on the other. It
 // has no dependency on the heavy service/Ent layer.
 package contract
@@ -20,14 +20,14 @@ import (
 // decrypts it with the same shared key just before use, then discards it.
 //
 // What this buys (defense-in-depth on top of mTLS):
-//   - a captured lease response is useless to a DIFFERENT edge (AAD = ccdirectID),
+//   - a captured lease response is useless to a DIFFERENT ccdirect (AAD = ccdirectID),
 //   - and useless after it expires (short TTL), bounding replay,
 //   - and opaque to any mTLS-terminating intermediary (it stays encrypted at the
 //     application layer).
 //
-// It does NOT stop the legitimate holding edge from using the decrypted token
-// out-of-band — that is inherent to edge-egress with static upstream keys and is
-// contained by edge trust (mTLS), usage reconciliation, and key rotation.
+// It does NOT stop the legitimate holding ccdirect from using the decrypted token
+// out-of-band — that is inherent to ccdirect-egress with static upstream keys and is
+// contained by ccdirect trust (mTLS), usage reconciliation, and key rotation.
 
 func deriveSealKey(secret []byte) []byte {
 	sum := sha256.Sum256(secret)
@@ -56,7 +56,7 @@ func SealLeaseToken(token, ccdirectID string, ttl time.Duration, secret []byte, 
 }
 
 // OpenLeaseToken decrypts a sealed token, verifying the ccdirectID binding and that
-// it has not expired. Any tampering / wrong key / wrong edge / expiry fails.
+// it has not expired. Any tampering / wrong key / wrong ccdirect / expiry fails.
 func OpenLeaseToken(sealed, ccdirectID string, secret []byte, now func() time.Time) (string, error) {
 	if now == nil {
 		now = time.Now
@@ -75,7 +75,7 @@ func OpenLeaseToken(sealed, ccdirectID string, secret []byte, now func() time.Ti
 	nonce, ct := raw[:gcm.NonceSize()], raw[gcm.NonceSize():]
 	plain, err := gcm.Open(nil, nonce, ct, []byte(ccdirectID))
 	if err != nil {
-		return "", errors.New("contract: sealed token invalid (wrong key/edge or tampered)")
+		return "", errors.New("contract: sealed token invalid (wrong key/ccdirect or tampered)")
 	}
 	if len(plain) < 8 {
 		return "", errors.New("contract: sealed token malformed")

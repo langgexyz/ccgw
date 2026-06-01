@@ -1,10 +1,10 @@
-// Package edgereg tracks live edge nodes for the distributed-edge gateway.
+// Package registry tracks live ccdirect nodes for the distributed-ccdirect gateway.
 //
-// The center uses a Registry to record edges as they register and send
-// heartbeats, and to answer liveness queries. An edge is considered live
+// The center uses a Registry to record ccdirects as they register and send
+// heartbeats, and to answer liveness queries. An ccdirect is considered live
 // while the time since its last heartbeat stays within the configured TTL.
 // All operations are safe for concurrent use.
-package edgereg
+package registry
 
 import (
 	"sort"
@@ -15,7 +15,7 @@ import (
 // defaultTTL is the liveness window used when New is given a non-positive ttl.
 const defaultTTL = 30 * time.Second
 
-// CCDirectInfo describes a single edge node tracked by the center.
+// CCDirectInfo describes a single ccdirect node tracked by the center.
 type CCDirectInfo struct {
 	ID           string    `json:"id"`
 	EgressIP     string    `json:"egress_ip"`
@@ -28,16 +28,16 @@ type CCDirectInfo struct {
 // a nil Clock passed to New means time.Now is used.
 type Clock func() time.Time
 
-// Registry is a concurrency-safe store of edge nodes and their liveness.
+// Registry is a concurrency-safe store of ccdirect nodes and their liveness.
 type Registry struct {
 	ttl time.Duration
 	now Clock
 
-	mu    sync.RWMutex
-	edges map[string]CCDirectInfo
+	mu        sync.RWMutex
+	ccdirects map[string]CCDirectInfo
 }
 
-// New builds a registry. ttl is the liveness window: an edge is live when
+// New builds a registry. ttl is the liveness window: an ccdirect is live when
 // now-LastSeen <= ttl. If ttl <= 0 the 30s default is used. If now is nil
 // time.Now is used.
 func New(ttl time.Duration, now Clock) *Registry {
@@ -48,9 +48,9 @@ func New(ttl time.Duration, now Clock) *Registry {
 		now = time.Now
 	}
 	return &Registry{
-		ttl:   ttl,
-		now:   now,
-		edges: make(map[string]CCDirectInfo),
+		ttl:       ttl,
+		now:       now,
+		ccdirects: make(map[string]CCDirectInfo),
 	}
 }
 
@@ -65,7 +65,7 @@ func copyPlatforms(platforms []string) []string {
 	return out
 }
 
-// Register upserts an edge. On first sight RegisteredAt is set to now; on
+// Register upserts an ccdirect. On first sight RegisteredAt is set to now; on
 // subsequent calls RegisteredAt is preserved. LastSeen is always bumped to
 // now, and EgressIP and Platforms are refreshed. Platforms is copied so the
 // caller cannot mutate stored state.
@@ -74,7 +74,7 @@ func (r *Registry) Register(id, egressIP string, platforms []string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	e, ok := r.edges[id]
+	e, ok := r.ccdirects[id]
 	if !ok {
 		e.ID = id
 		e.RegisteredAt = t
@@ -82,26 +82,26 @@ func (r *Registry) Register(id, egressIP string, platforms []string) {
 	e.EgressIP = egressIP
 	e.Platforms = copyPlatforms(platforms)
 	e.LastSeen = t
-	r.edges[id] = e
+	r.ccdirects[id] = e
 }
 
-// Heartbeat bumps LastSeen for a known edge. It returns false if id is
+// Heartbeat bumps LastSeen for a known ccdirect. It returns false if id is
 // unknown.
 func (r *Registry) Heartbeat(id string) bool {
 	t := r.now()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	e, ok := r.edges[id]
+	e, ok := r.ccdirects[id]
 	if !ok {
 		return false
 	}
 	e.LastSeen = t
-	r.edges[id] = e
+	r.ccdirects[id] = e
 	return true
 }
 
-// isLive reports whether the edge was last seen within the TTL relative to t.
+// isLive reports whether the ccdirect was last seen within the TTL relative to t.
 func (r *Registry) isLive(e CCDirectInfo, t time.Time) bool {
 	return t.Sub(e.LastSeen) <= r.ttl
 }
@@ -112,15 +112,15 @@ func cloneEdge(e CCDirectInfo) CCDirectInfo {
 	return e
 }
 
-// Live returns all currently-live edges (now-LastSeen <= ttl), sorted by ID
+// Live returns all currently-live ccdirects (now-LastSeen <= ttl), sorted by ID
 // ascending. The returned values are copies.
 func (r *Registry) Live() []CCDirectInfo {
 	t := r.now()
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	out := make([]CCDirectInfo, 0, len(r.edges))
-	for _, e := range r.edges {
+	out := make([]CCDirectInfo, 0, len(r.ccdirects))
+	for _, e := range r.ccdirects {
 		if r.isLive(e, t) {
 			out = append(out, cloneEdge(e))
 		}
@@ -137,35 +137,35 @@ func (r *Registry) IsLive(id string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	e, ok := r.edges[id]
+	e, ok := r.ccdirects[id]
 	if !ok {
 		return false
 	}
 	return r.isLive(e, t)
 }
 
-// Get returns an edge by id (copy) and whether it exists.
+// Get returns an ccdirect by id (copy) and whether it exists.
 func (r *Registry) Get(id string) (CCDirectInfo, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	e, ok := r.edges[id]
+	e, ok := r.ccdirects[id]
 	if !ok {
 		return CCDirectInfo{}, false
 	}
 	return cloneEdge(e), true
 }
 
-// Prune deletes expired (non-live) edges and returns how many were removed.
+// Prune deletes expired (non-live) ccdirects and returns how many were removed.
 func (r *Registry) Prune() int {
 	t := r.now()
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	removed := 0
-	for id, e := range r.edges {
+	for id, e := range r.ccdirects {
 		if !r.isLive(e, t) {
-			delete(r.edges, id)
+			delete(r.ccdirects, id)
 			removed++
 		}
 	}

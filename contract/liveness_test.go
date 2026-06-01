@@ -19,25 +19,25 @@ func mustKey(t *testing.T) (ed25519.PublicKey, ed25519.PrivateKey) {
 
 func TestLiveness_RoundTrip(t *testing.T) {
 	pub, priv := mustKey(t)
-	tok := SignLiveness(priv, "edge-u1", time.Minute, time.Now)
-	if err := VerifyLiveness(pub, tok, "edge-u1", time.Now); err != nil {
+	tok := SignLiveness(priv, "ccdirect-u1", time.Minute, time.Now)
+	if err := VerifyLiveness(pub, tok, "ccdirect-u1", time.Now); err != nil {
 		t.Fatalf("verify ok token: %v", err)
 	}
 }
 
 func TestLiveness_WrongEdgeRejected(t *testing.T) {
 	pub, priv := mustKey(t)
-	tok := SignLiveness(priv, "edge-u1", time.Minute, time.Now)
-	if err := VerifyLiveness(pub, tok, "edge-u2", time.Now); err != ErrLivenessWrongEdge {
-		t.Fatalf("want wrong-edge, got %v", err)
+	tok := SignLiveness(priv, "ccdirect-u1", time.Minute, time.Now)
+	if err := VerifyLiveness(pub, tok, "ccdirect-u2", time.Now); err != ErrLivenessWrongEdge {
+		t.Fatalf("want wrong-ccdirect, got %v", err)
 	}
 }
 
 func TestLiveness_WrongKeyRejected(t *testing.T) {
 	_, priv := mustKey(t)
 	otherPub, _ := mustKey(t)
-	tok := SignLiveness(priv, "edge-u1", time.Minute, time.Now)
-	if err := VerifyLiveness(otherPub, tok, "edge-u1", time.Now); err != ErrLivenessBadSig {
+	tok := SignLiveness(priv, "ccdirect-u1", time.Minute, time.Now)
+	if err := VerifyLiveness(otherPub, tok, "ccdirect-u1", time.Now); err != ErrLivenessBadSig {
 		t.Fatalf("want bad-sig, got %v", err)
 	}
 }
@@ -45,26 +45,26 @@ func TestLiveness_WrongKeyRejected(t *testing.T) {
 func TestLiveness_ExpiredRejected(t *testing.T) {
 	pub, priv := mustKey(t)
 	base := time.Unix(1_700_000_000, 0)
-	tok := SignLiveness(priv, "edge-u1", time.Minute, func() time.Time { return base })
+	tok := SignLiveness(priv, "ccdirect-u1", time.Minute, func() time.Time { return base })
 	later := func() time.Time { return base.Add(2 * time.Minute) }
-	if err := VerifyLiveness(pub, tok, "edge-u1", later); err != ErrLivenessExpired {
+	if err := VerifyLiveness(pub, tok, "ccdirect-u1", later); err != ErrLivenessExpired {
 		t.Fatalf("want expired, got %v", err)
 	}
 }
 
 func TestLiveness_TamperedExpRejected(t *testing.T) {
 	pub, priv := mustKey(t)
-	tok := SignLiveness(priv, "edge-u1", time.Minute, time.Now)
+	tok := SignLiveness(priv, "ccdirect-u1", time.Minute, time.Now)
 	tok.ExpiresAt += 100000 // extend exp without re-signing
-	if err := VerifyLiveness(pub, tok, "edge-u1", time.Now); err != ErrLivenessBadSig {
+	if err := VerifyLiveness(pub, tok, "ccdirect-u1", time.Now); err != ErrLivenessBadSig {
 		t.Fatalf("want bad-sig on tampered exp, got %v", err)
 	}
 }
 
 func TestLiveness_MalformedSig(t *testing.T) {
 	pub, _ := mustKey(t)
-	tok := LivenessToken{CCDirectID: "edge-u1", ExpiresAt: time.Now().Add(time.Minute).Unix(), Signature: "!!!not-base64!!!"}
-	if err := VerifyLiveness(pub, tok, "edge-u1", time.Now); err != ErrLivenessMalformed {
+	tok := LivenessToken{CCDirectID: "ccdirect-u1", ExpiresAt: time.Now().Add(time.Minute).Unix(), Signature: "!!!not-base64!!!"}
+	if err := VerifyLiveness(pub, tok, "ccdirect-u1", time.Now); err != ErrLivenessMalformed {
 		t.Fatalf("want malformed, got %v", err)
 	}
 }
